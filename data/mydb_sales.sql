@@ -1,0 +1,59 @@
+-- MySQL dump 10.13  Distrib 8.0.44, for Win64 (x86_64)
+--
+-- Host: 127.0.0.1    Database: mydb
+-- ------------------------------------------------------
+-- Server version	5.7.24
+
+/*!40101 SET @OLD_CHARACTER_SET_CLIENT=@@CHARACTER_SET_CLIENT */;
+/*!40101 SET @OLD_CHARACTER_SET_RESULTS=@@CHARACTER_SET_RESULTS */;
+/*!40101 SET @OLD_COLLATION_CONNECTION=@@COLLATION_CONNECTION */;
+/*!50503 SET NAMES utf8 */;
+/*!40103 SET @OLD_TIME_ZONE=@@TIME_ZONE */;
+/*!40103 SET TIME_ZONE='+00:00' */;
+/*!40014 SET @OLD_UNIQUE_CHECKS=@@UNIQUE_CHECKS, UNIQUE_CHECKS=0 */;
+/*!40014 SET @OLD_FOREIGN_KEY_CHECKS=@@FOREIGN_KEY_CHECKS, FOREIGN_KEY_CHECKS=0 */;
+/*!40101 SET @OLD_SQL_MODE=@@SQL_MODE, SQL_MODE='NO_AUTO_VALUE_ON_ZERO' */;
+/*!40111 SET @OLD_SQL_NOTES=@@SQL_NOTES, SQL_NOTES=0 */;
+
+--
+-- Table structure for table `sales`
+--
+
+DROP TABLE IF EXISTS `sales`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `sales` (
+  `sale_id` int(11) NOT NULL AUTO_INCREMENT,
+  `paddle_id` int(11) DEFAULT NULL,
+  `customer_id` int(11) DEFAULT NULL,
+  `sale_date` datetime DEFAULT CURRENT_TIMESTAMP,
+  `quantity` int(11) DEFAULT '1',
+  `total_amount` decimal(8,2) DEFAULT NULL,
+  PRIMARY KEY (`sale_id`),
+  KEY `paddle_id` (`paddle_id`),
+  KEY `customer_id` (`customer_id`),
+  CONSTRAINT `sales_ibfk_1` FOREIGN KEY (`paddle_id`) REFERENCES `paddles` (`paddle_id`) ON DELETE CASCADE,
+  CONSTRAINT `sales_ibfk_2` FOREIGN KEY (`customer_id`) REFERENCES `customers` (`customer_id`) ON DELETE SET NULL
+) ENGINE=InnoDB AUTO_INCREMENT=16 DEFAULT CHARSET=utf8;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Dumping data for table `sales`
+--
+
+LOCK TABLES `sales` WRITE;
+/*!40000 ALTER TABLE `sales` DISABLE KEYS */;
+INSERT INTO `sales` VALUES (1,1,1,'2024-03-15 10:30:00',1,249.99),(2,4,2,'2024-03-16 14:20:00',2,399.98),(3,7,3,'2024-03-17 09:15:00',1,99.99),(4,10,4,'2024-03-18 11:45:00',1,229.99),(5,13,5,'2024-03-19 16:00:00',1,259.99),(6,16,6,'2024-03-20 12:30:00',1,249.99),(7,19,7,'2024-03-21 15:10:00',1,180.00),(8,22,8,'2024-03-22 09:45:00',1,139.99),(9,25,9,'2024-03-23 13:20:00',1,149.99),(10,28,10,'2024-03-24 10:00:00',1,199.99),(11,2,1,'2024-03-25 14:00:00',1,249.99),(12,5,2,'2024-03-26 11:30:00',1,199.99),(13,8,3,'2024-03-27 16:45:00',1,129.99),(14,11,4,'2024-03-28 08:15:00',1,229.99),(15,14,5,'2024-03-29 12:00:00',1,259.99);
+/*!40000 ALTER TABLE `sales` ENABLE KEYS */;
+UNLOCK TABLES;
+/*!40103 SET TIME_ZONE=@OLD_TIME_ZONE */;
+
+/*!40101 SET SQL_MODE=@OLD_SQL_MODE */;
+/*!40014 SET FOREIGN_KEY_CHECKS=@OLD_FOREIGN_KEY_CHECKS */;
+/*!40014 SET UNIQUE_CHECKS=@OLD_UNIQUE_CHECKS */;
+/*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;
+/*!40101 SET CHARACTER_SET_RESULTS=@OLD_CHARACTER_SET_RESULTS */;
+/*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
+/*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
+
+-- Dump completed on 2026-04-07 16:11:11
