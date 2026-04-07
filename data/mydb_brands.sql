@@ -36,7 +36,7 @@ CREATE TABLE `brands` (
 
 LOCK TABLES `brands` WRITE;
 /*!40000 ALTER TABLE `brands` DISABLE KEYS */;
-INSERT INTO `brands` VALUES (1,'Joola','USA'),(2,'Selkirk','USA'),(3,'Paddletek','USA'),(4,'CRBN','USA'),(5,'Engage','USA'),(6,'Gearbox','USA'),(7,'Six Zero','Australia'),(8,'Vatic Pro','USA'),(9,'Ronbus','USA'),(10,'Diadem','USA'),(11,'Dummy Brand','Nowhere');
+INSERT INTO `brands` VALUES (2,'Selkirk','USA'),(3,'Paddletek','USA'),(4,'CRBN','USA'),(5,'Engage','USA'),(6,'Gearbox','USA'),(7,'Six Zero','Australia'),(8,'Vatic Pro','USA'),(9,'Ronbus','USA'),(10,'Diadem','USA'),(11,'Dummy Brand','Nowhere');
 /*!40000 ALTER TABLE `brands` ENABLE KEYS */;
 UNLOCK TABLES;
 /*!40103 SET TIME_ZONE=@OLD_TIME_ZONE */;
@@ -49,4 +49,4 @@ UNLOCK TABLES;
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2026-04-07 16:11:11
+-- Dump completed on 2026-04-07 16:40:06

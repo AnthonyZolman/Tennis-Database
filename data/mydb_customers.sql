@@ -31,7 +31,7 @@ CREATE TABLE `customers` (
   `member_since` date DEFAULT NULL,
   PRIMARY KEY (`customer_id`),
   UNIQUE KEY `email` (`email`)
-) ENGINE=InnoDB AUTO_INCREMENT=11 DEFAULT CHARSET=utf8;
+) ENGINE=InnoDB AUTO_INCREMENT=12 DEFAULT CHARSET=utf8;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -40,7 +40,7 @@ CREATE TABLE `customers` (
 
 LOCK TABLES `customers` WRITE;
 /*!40000 ALTER TABLE `customers` DISABLE KEYS */;
-INSERT INTO `customers` VALUES (1,'Alex','Carter','alex.c@email.com','Platinum','2024-01-15'),(2,'Jordan','Smith','jsmith99@email.com','Gold','2024-02-10'),(3,'Taylor','Brooks','tbrooks@email.com','Standard','2023-11-05'),(4,'Casey','Jones','cjones@email.com','Standard','2024-03-01'),(5,'Morgan','Lee','mlee_pickleball@email.com','Gold','2023-12-20'),(6,'Riley','Davis','riley.davis@email.com','Platinum','2024-01-05'),(7,'Sam','Wilson','swilson@email.com','Standard','2024-02-28'),(8,'Quinn','Taylor','qtaylor@email.com','Gold','2023-10-15'),(9,'Avery','Clark','aclark@email.com','Standard','2024-03-12'),(10,'Blake','Evans','bevans@email.com','Platinum','2024-01-30');
+INSERT INTO `customers` VALUES (1,'Alex','Carter','alex.c@email.com','Platinum','2024-01-15'),(2,'Jordan','Smith','jsmith99@email.com','Gold','2024-02-10'),(3,'Taylor','Brooks','tbrooks@email.com','Standard','2023-11-05'),(4,'Casey','Jones','cjones@email.com','Standard','2024-03-01'),(5,'Morgan','Lee','mlee_pickleball@email.com','Gold','2023-12-20'),(6,'Riley','Davis','riley.davis@email.com','Platinum','2024-01-05'),(7,'Sam','Wilson','swilson@email.com','Standard','2024-02-28'),(8,'Quinn','Taylor','qtaylor@email.com','Gold','2023-10-15'),(9,'Avery','Clark','aclark@email.com','Standard','2024-03-12'),(10,'Blake','Evans','bevans@email.com','Platinum','2024-01-30'),(11,'bob','drake','erp@hotmail.com','Standard','2026-04-07');
 /*!40000 ALTER TABLE `customers` ENABLE KEYS */;
 UNLOCK TABLES;
 /*!40103 SET TIME_ZONE=@OLD_TIME_ZONE */;
@@ -53,4 +53,4 @@ UNLOCK TABLES;
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2026-04-07 16:11:12
+-- Dump completed on 2026-04-07 16:40:06

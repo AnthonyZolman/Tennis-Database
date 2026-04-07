@@ -33,6 +33,7 @@ CREATE TABLE `paddles` (
   `release_date` date DEFAULT NULL,
   `weight_oz` decimal(4,2) DEFAULT NULL,
   `image_url` varchar(255) DEFAULT NULL,
+  `img_url` varchar(255) DEFAULT NULL,
   PRIMARY KEY (`paddle_id`),
   KEY `brand_id` (`brand_id`),
   KEY `shape_id` (`shape_id`),
@@ -49,7 +50,7 @@ CREATE TABLE `paddles` (
 
 LOCK TABLES `paddles` WRITE;
 /*!40000 ALTER TABLE `paddles` DISABLE KEYS */;
-INSERT INTO `paddles` VALUES (1,1,2,1,'Perseus CFS 16',249.99,26,'2023-06-01',8.00,NULL),(2,1,2,2,'Perseus CFS 14',249.99,8,'2023-06-01',7.80,NULL),(3,1,1,1,'Scorpeus CFS 16',249.99,12,'2023-07-15',8.00,NULL),(4,2,4,1,'Vanguard Control Invikta',199.99,15,'2024-01-10',7.90,NULL),(5,2,1,1,'Vanguard Control Epic',199.99,5,'2024-01-10',7.80,NULL),(6,2,8,1,'Power Air Invikta',250.00,4,'2022-08-20',7.90,NULL),(7,3,1,5,'Bantam EX-L',99.99,4,'2019-05-12',7.80,NULL),(8,3,2,1,'Tempest Wave II',129.99,6,'2021-03-15',7.60,NULL),(9,3,2,2,'TS-5 Pro',149.99,9,'2022-11-01',7.70,NULL),(10,4,2,1,'CRBN 1X 16mm',229.99,3,'2023-02-14',8.10,NULL),(11,4,1,2,'CRBN 2X 14mm',229.99,10,'2023-02-14',7.90,NULL),(12,4,4,1,'CRBN 3X 16mm',229.99,11,'2023-04-10',8.00,NULL),(13,5,2,1,'Pursuit Pro EX 6.0',259.99,8,'2023-08-22',8.10,NULL),(14,5,1,2,'Pursuit Pro MX',259.99,2,'2023-08-22',7.90,NULL),(15,5,3,1,'Encore EX 6.0',159.99,14,'2021-07-05',8.00,NULL),(16,6,2,7,'CX14E Ultimate',249.99,12,'2022-09-30',8.00,NULL),(17,6,1,7,'CX14H',199.99,7,'2021-12-01',8.00,NULL),(18,6,2,7,'Pro Power Elongated',279.99,15,'2023-10-15',8.00,NULL),(19,7,4,1,'Double Black Diamond',180.00,22,'2023-01-20',8.10,NULL),(20,7,4,2,'Black Diamond Power',180.00,15,'2023-01-20',8.00,NULL),(21,7,1,1,'Ruby',199.00,5,'2023-11-25',8.20,NULL),(22,8,2,1,'V7 Pro',139.99,10,'2022-10-10',8.10,NULL),(23,8,4,1,'Flash Pro',139.99,9,'2023-03-05',8.00,NULL),(24,8,4,2,'Alchemy 14mm',179.99,12,'2023-09-12',7.90,NULL),(25,9,2,1,'R1 Nova',149.99,6,'2023-05-18',8.00,NULL),(26,9,4,1,'R3 Pulsar',169.99,14,'2023-07-22',8.10,NULL),(27,9,1,2,'EV1.16',159.99,3,'2024-02-01',8.20,NULL),(28,10,1,1,'Vice',199.99,-1,'2022-12-15',8.10,NULL),(29,10,2,1,'Edge 18k',229.99,10,'2023-08-08',8.00,NULL),(30,10,1,2,'Icon V2',159.99,16,'2022-06-25',7.90,NULL);
+INSERT INTO `paddles` VALUES (4,2,4,1,'Vanguard Control Invikta',199.99,15,'2024-01-10',7.90,NULL,'assets/4.jpg'),(5,2,1,1,'Vanguard Control Epic',199.99,5,'2024-01-10',7.80,NULL,'assets/5.jpg'),(6,2,8,1,'Power Air Invikta',250.00,4,'2022-08-20',7.90,NULL,'assets/6.jpg'),(7,3,1,5,'Bantam EX-L',99.99,4,'2019-05-12',7.80,NULL,'assets/7.jpg'),(8,3,2,1,'Tempest Wave II',129.99,6,'2021-03-15',7.60,NULL,'assets/8.jpg'),(9,3,2,2,'TS-5 Pro',149.99,9,'2022-11-01',7.70,NULL,'assets/9.jpg'),(10,4,2,1,'CRBN 1X 16mm',229.99,3,'2023-02-14',8.10,NULL,'assets/10.jpg'),(11,4,1,2,'CRBN 2X 14mm',229.99,10,'2023-02-14',7.90,NULL,'assets/11.jpg'),(12,4,4,1,'CRBN 3X 16mm',229.99,11,'2023-04-10',8.00,NULL,'assets/12.jpg'),(13,5,2,1,'Pursuit Pro EX 6.0',259.99,8,'2023-08-22',8.10,NULL,'assets/13.jpg'),(14,5,1,2,'Pursuit Pro MX',259.99,2,'2023-08-22',7.90,NULL,'assets/14.jpg'),(15,5,3,1,'Encore EX 6.0',159.99,14,'2021-07-05',8.00,NULL,'assets/15.jpg'),(16,6,2,7,'CX14E Ultimate',249.99,12,'2022-09-30',8.00,NULL,'assets/16.jpg'),(17,6,1,7,'CX14H',199.99,7,'2021-12-01',8.00,NULL,'assets/17.jpg'),(18,6,2,7,'Pro Power Elongated',279.99,82,'2023-10-15',8.00,NULL,'assets/18.jpg'),(19,7,4,1,'Double Black Diamond',180.00,22,'2023-01-20',8.10,NULL,'assets/19.jpg'),(20,7,4,2,'Black Diamond Power',180.00,15,'2023-01-20',8.00,NULL,'assets/20.jpg'),(21,7,1,1,'Ruby',199.00,5,'2023-11-25',8.20,NULL,'assets/21.jpg'),(22,8,2,1,'V7 Pro',139.99,10,'2022-10-10',8.10,NULL,'assets/22.jpg'),(23,8,4,1,'Flash Pro',139.99,9,'2023-03-05',8.00,NULL,'assets/23.jpg'),(24,8,4,2,'Alchemy 14mm',179.99,12,'2023-09-12',7.90,NULL,'assets/24.jpg'),(25,9,2,1,'R1 Nova',149.99,6,'2023-05-18',8.00,NULL,'assets/25.jpg'),(26,9,4,1,'R3 Pulsar',169.99,14,'2023-07-22',8.10,NULL,'assets/26.jpg'),(27,9,1,2,'EV1.16',159.99,3,'2024-02-01',8.20,NULL,'assets/27.jpg'),(28,10,1,1,'Vice',199.99,-7,'2022-12-15',8.10,NULL,'assets/28.jpg'),(29,10,2,1,'Edge 18k',229.99,10,'2023-08-08',8.00,NULL,'assets/29.jpg'),(30,10,1,2,'Icon V2',159.99,16,'2022-06-25',7.90,NULL,'assets/30.jpg');
 /*!40000 ALTER TABLE `paddles` ENABLE KEYS */;
 UNLOCK TABLES;
 /*!40103 SET TIME_ZONE=@OLD_TIME_ZONE */;
@@ -62,4 +63,4 @@ UNLOCK TABLES;
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2026-04-07 16:11:11
+-- Dump completed on 2026-04-07 16:40:06

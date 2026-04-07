@@ -1,10 +1,15 @@
 <?php
 // 1. CONNECTION & ERROR REPORTING
-ini_set('display_errors', 1); error_reporting(E_ALL);
-$conn = new mysqli("127.0.0.1", "root", "root", "mydb", 3306);
-if ($conn->connect_error) { die("Connection failed: " . $conn->connect_error); }
+ini_set('display_errors', 1); 
+error_reporting(E_ALL);
 
-// Turn off safe updates so our Delete/Update queries work smoothly
+// Ensure these match your actual credentials
+$conn = new mysqli("127.0.0.1", "root", "root", "mydb", 3306);
+if ($conn->connect_error) { 
+    die("Connection failed: " . $conn->connect_error); 
+}
+
+// Turn off safe updates for internal management tasks
 $conn->query("SET SQL_SAFE_UPDATES = 0;");
 
 // 2. PAGE LOGIC
@@ -15,17 +20,18 @@ $sql_log = "";
 // 3. INTERACTIVE ACTIONS (Handling POST requests)
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
     switch($_POST['action']) {
-        case 'delete': // Req 3: Delete Query
+        case 'delete':
             $id = (int)$_POST['id'];
             $conn->query("DELETE FROM brands WHERE brand_id = $id");
             $message = "Brand ID #$id successfully removed from system. (Req 3)";
             break;
-        case 'update': // Req 4: Update Query
-            $id = (int)$_POST['id']; $qty = (int)$_POST['qty'];
+        case 'update':
+            $id = (int)$_POST['id']; 
+            $qty = (int)$_POST['qty'];
             $conn->query("UPDATE paddles SET stock_quantity = stock_quantity + $qty WHERE paddle_id = $id");
             $message = "Stock level updated for Item #$id. (Req 4)";
             break;
-        case 'add_cust': // Req 5: Insert Query
+        case 'add_cust':
             $f = $conn->real_escape_string($_POST['f']); 
             $l = $conn->real_escape_string($_POST['l']);
             $e = $conn->real_escape_string($_POST['e']);
@@ -41,6 +47,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
     <meta charset="UTF-8">
     <title>Pickleball Pro-Shop | Management Console</title>
     <link rel="stylesheet" href="style.css">
+    <style>
+        /* Small addition for image alignment */
+        .img-preview {
+            width: 60px;
+            height: 60px;
+            object-fit: cover;
+            border-radius: 6px;
+            border: 1px solid #e2e8f0;
+            background-color: #f8fafc;
+        }
+        table td { vertical-align: middle; }
+    </style>
 </head>
 <body>
     <nav class="top-nav">
@@ -69,31 +87,46 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
             
             <div class="card">
                 <table>
-                    <thead><tr><th>ID</th><th>Model</th><th>Price (w/ 6% Tax)</th><th>Stock</th><th>Restock Action</th></tr></thead>
+                    <thead>
+                        <tr>
+                            <th>Preview</th>
+                            <th>ID</th>
+                            <th>Model</th>
+                            <th>Price (w/ 6% Tax)</th>
+                            <th>Stock</th>
+                            <th>Restock Action</th>
+                        </tr>
+                    </thead>
                     <tbody>
                         <?php
-                        $sql = "SELECT paddle_id, model_name, price, stock_quantity FROM paddles";
+                        // UPDATED: Added img_url to the SELECT statement
+                        $sql = "SELECT paddle_id, model_name, price, stock_quantity, img_url FROM paddles";
                         
-                        // Applying filters based on buttons clicked
                         if(isset($_GET['filter']) && $_GET['filter'] == 'low') {
-                            $sql .= " WHERE stock_quantity < 10"; // Req 2: WHERE clause
+                            $sql .= " WHERE stock_quantity < 10"; 
                         } elseif(isset($_GET['filter']) && $_GET['filter'] == 'premium') {
-                            $sql .= " WHERE price > (SELECT AVG(price) FROM paddles)"; // Req 10: Subquery
+                            $sql .= " WHERE price > (SELECT AVG(price) FROM paddles)"; 
                         }
                         
                         if(isset($_GET['sort']) && $_GET['sort'] == 'price') {
-                            $sql .= " ORDER BY price DESC"; // Req 1: ORDER BY
+                            $sql .= " ORDER BY price DESC"; 
                         }
                         
-                        $sql_log = $sql; // Save for the Developer console at the bottom
+                        $sql_log = $sql; 
                         $res = $conn->query($sql);
                         
                         if ($res && $res->num_rows > 0) {
                             while($row = $res->fetch_assoc()): ?>
                                 <tr>
+                                    <td>
+                                        <img src="<?= htmlspecialchars($row['img_url']) ?>" 
+                                             alt="Paddle Image" 
+                                             class="img-preview"
+                                             onerror="this.src='https://placehold.co/60x60?text=No+Img'">
+                                    </td>
                                     <td>#<?= $row['paddle_id'] ?></td>
                                     <td><?= $row['model_name'] ?></td>
-                                    <td>$<?= number_format(round($row['price'] * 1.06, 2), 2) ?> <span style="font-size:10px; color:gray;">(Req 12)</span></td>
+                                    <td>$<?= number_format(round($row['price'] * 1.06, 2), 2) ?></td>
                                     <td><?= $row['stock_quantity'] ?></td>
                                     <td>
                                         <form method="POST" style="display:inline;">
@@ -105,7 +138,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
                                     </td>
                                 </tr>
                             <?php endwhile; 
-                        } else { echo "<tr><td colspan='5'>No products match this filter.</td></tr>"; } ?>
+                        } else { echo "<tr><td colspan='6'>No products match this filter.</td></tr>"; } ?>
                     </tbody>
                 </table>
             </div>
@@ -121,9 +154,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
                     <button type="submit">Add New Customer (Req 5)</button>
                 </form>
                 <hr style="margin: 20px 0; border: 0; border-top: 1px solid #eee;">
-                
                 <?php 
-                // Req 11: String Function (CONCAT and UPPER)
                 $sql = "SELECT CONCAT(UPPER(last_name), ', ', first_name) AS full_name, email FROM customers"; 
                 $sql_log = $sql;
                 ?>
@@ -141,24 +172,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
                 <a href="?view=sales&month=3" class="btn-sm">March Sales Only (Req 13)</a>
                 <a href="?view=sales" class="btn-sm" style="background:#64748b;">Clear Filter</a>
             </div>
+            
             <div class="card">
                 <?php 
-                // Req 6: Inner Join (Joining sales, customers, and paddles)
-                // Req 14: CASE Function (Assigning VIP or Standard Tier)
                 $sql = "SELECT c.first_name, p.model_name, s.total_amount, 
                         CASE WHEN s.total_amount > 200 THEN 'VIP Tier' ELSE 'Standard Tier' END as Tier 
                         FROM sales s 
                         JOIN customers c ON s.customer_id = c.customer_id 
                         JOIN paddles p ON s.paddle_id = p.paddle_id"; 
-                
-                if(isset($_GET['month'])) {
-                    // Req 13: Date Function (MONTH)
-                    $sql .= " WHERE MONTH(s.sale_date) = 3"; 
-                }
+                if(isset($_GET['month'])) { $sql .= " WHERE MONTH(s.sale_date) = 3"; }
                 $sql_log = $sql;
                 ?>
                 <table>
-                    <thead><tr><th>Customer Name</th><th>Product Purchased (Req 6)</th><th>Total Amount</th><th>Transaction Tier (Req 14)</th></tr></thead>
+                    <thead><tr><th>Customer</th><th>Product</th><th>Amount</th><th>Tier</th></tr></thead>
                     <?php $res = $conn->query($sql); while($row = $res->fetch_assoc()): ?>
                         <tr>
                             <td><?= $row['first_name'] ?></td>
@@ -172,8 +198,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
 
         <?php elseif($view == 'analytics'): ?>
             <div class="section-header"><h2>Business Analytics</h2></div>
-            
-            <div style="display:flex; gap:20px; flex-wrap:wrap;">
+                <div style="display:flex; gap:20px; flex-wrap:wrap;">
                 <div class="card" style="flex:1; background: #eff6ff; border-left: 5px solid #2563eb;">
                     <h3>Total Gross Revenue (Req 8)</h3>
                     <?php 
@@ -226,9 +251,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
             </div>
 
         <?php endif; ?>
+             
 
         <div class="dev-console">
-            <strong>Active Query Log (Screenshot this for your report):</strong><br>
+            <strong>Active Query Log:</strong><br>
             <code><?= htmlspecialchars($sql_log) ?></code>
         </div>
     </div>
