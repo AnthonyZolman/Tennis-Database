@@ -8,12 +8,12 @@ USE mydb;
 -- 1. Sorts all paddles from most expensive to least expensive
 SELECT paddle_id, model_name, price, stock_quantity, img_url 
 FROM paddles 
-ORDER BY price DESC
+ORDER BY price DESC;
 
 -- 2. Finds low-stock items (under 10 count)
 SELECT paddle_id, model_name, price, stock_quantity, img_url 
 FROM paddles 
-WHERE stock_quantity < 10
+WHERE stock_quantity < 10;
 
 -- 3. Deletes the dummy brand we added specifically for this test
 DELETE FROM brands 
@@ -21,8 +21,8 @@ WHERE brand_name = 'Dummy Brand';
 
 -- 4. Adjusts stock quantity of paddles
 UPDATE paddles 
-SET stock_quantity = stock_quantity + [qty_value] 
-WHERE paddle_id = [id_value]
+SET stock_quantity = stock_quantity + 0
+WHERE paddle_id = 0;
 
 -- 5. Adds a new user customer
 INSERT INTO customers (

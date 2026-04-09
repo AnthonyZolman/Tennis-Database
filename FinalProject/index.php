@@ -29,7 +29,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
             $id = (int)$_POST['id']; 
             $qty = (int)$_POST['qty'];
             $conn->query("UPDATE paddles SET stock_quantity = stock_quantity + $qty WHERE paddle_id = $id");
-            $message = "Stock level updated for Item #$id. (Req 4)";
+            $message = "Stock level updated for Item #$id. (Req 4)"; // THERE IS SOMETHING WRONG HERE!!!!
             break;
         case 'add_cust':
             $f = $conn->real_escape_string($_POST['f']); 
