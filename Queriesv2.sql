@@ -5,72 +5,89 @@
 
 USE mydb;
 
--- 1. A general SELECT query with an ORDER BY clause
-SELECT model_name, price 
+-- 1. Sorts all paddles from most expensive to least expensive
+SELECT paddle_id, model_name, price, stock_quantity, img_url 
 FROM paddles 
-ORDER BY price DESC;
+ORDER BY price DESC
 
--- 2. A SELECT query that includes a WHERE clause
-SELECT model_name, stock_quantity 
+-- 2. Finds low-stock items (under 10 count)
+SELECT paddle_id, model_name, price, stock_quantity, img_url 
 FROM paddles 
-WHERE stock_quantity < 10;
+WHERE stock_quantity < 10
 
--- 3. A Delete Query
+-- 3. Deletes the dummy brand we added specifically for this test
 DELETE FROM brands 
 WHERE brand_name = 'Dummy Brand';
 
--- 4. An Update Query
+-- 4. Adjusts stock quantity of paddles
 UPDATE paddles 
-SET price = price - 10.00 
-WHERE brand_id = 1;
+SET stock_quantity = stock_quantity + [qty_value] 
+WHERE paddle_id = [id_value]
 
--- 5. An Insert Query
-INSERT INTO sales (paddle_id, customer_id, quantity, total_amount) 
-VALUES (1, 3, 1, 249.99);
+-- 5. Adds a new user customer
+INSERT INTO customers (
+    first_name, 
+    last_name, 
+    email, 
+    membership_level, 
+    member_since
+) 
+VALUES (
+    'Firstname', 
+    'Lastname', 
+    'email@example.com', 
+    'Standard', 
+    CURDATE()
+);
 
--- 6. A query for inner join
-SELECT c.first_name, c.last_name, p.model_name, s.total_amount 
-FROM sales s 
-INNER JOIN customers c ON s.customer_id = c.customer_id 
-INNER JOIN paddles p ON s.paddle_id = p.paddle_id;
+-- 6. Joins paddles and brands to show the paddle name alongside the company that makes it
+SELECT p.model_name, b.brand_name 
+FROM paddles p 
+INNER JOIN brands b ON p.brand_id = b.brand_id;
 
--- 7. A query for outer join (left or right)
-SELECT p.model_name, s.sale_id 
+-- 7. Uses a LEFT JOIN to list paddles with no sales
+SELECT p.model_name 
 FROM paddles p 
 LEFT JOIN sales s ON p.paddle_id = s.paddle_id 
 WHERE s.sale_id IS NULL;
 
--- 8. A query with an aggregate function(s)
-SELECT SUM(total_amount) AS total_gross_revenue 
+-- 8. Calculates the Total Gross Revenue of the storefront
+SELECT SUM(total_amount) AS total_revenue 
 FROM sales;
 
--- 9. A query that includes GROUP BY and HAVING clauses
-SELECT customer_id, SUM(total_amount) AS total_spent 
+-- 9. Returns the customers who have spent the most on the storefront
+SELECT 
+    customer_id, 
+    SUM(total_amount) AS total_spent 
 FROM sales 
 GROUP BY customer_id 
-HAVING SUM(total_amount) > 300;
+HAVING SUM(total_amount) > 200;
 
--- 10. A query with a subquery
+-- 10. Finds all paddles that cost more than the average paddle price
 SELECT model_name, price 
 FROM paddles 
 WHERE price > (SELECT AVG(price) FROM paddles);
 
--- 11. A query that includes a string function
-SELECT CONCAT(UPPER(last_name), ', ', first_name) AS formatted_name 
-FROM customers;
+-- 11. Uses CONCAT() to merge the customer first and last name into a single descriptive string
+SELECT 
+    CONCAT(last_name, ', ', first_name) AS full_name, 
+    email 
+FROM customers
+ORDER BY last_name ASC;
 
--- 12. A query that includes a numeric function
-SELECT model_name, price, ROUND(price * 1.06, 2) AS total_with_tax 
+-- 12. Uses ROUND() to round the paddle prices to the nearest whole dollar
+SELECT model_name, price, ROUND(price, 0) AS rounded_price 
 FROM paddles;
 
--- 13. A query that includes a date function
+-- 13. Uses the MONTH() to get sales from the month of March
 SELECT * FROM sales 
 WHERE MONTH(sale_date) = 3;
 
--- 14. A query that uses the CASE function
-SELECT sale_id, total_amount,
+-- 14. Categorizes paddles into price tiers based on their cost
+SELECT model_name, price,
     CASE 
-        WHEN total_amount >= 200.00 THEN 'Premium Transaction'
-        ELSE 'Standard Transaction'
-    END AS sale_type
-FROM sales;
+        WHEN price >= 200.00 THEN 'Premium Tier'
+        WHEN price >= 150.00 THEN 'Mid-Range Tier'
+        ELSE 'Budget Tier'
+    END AS price_category
+FROM paddles;
