@@ -52,7 +52,7 @@ LOCK TABLES `paddles` WRITE;
 INSERT INTO `paddles` VALUES
 (1,1,2,1,'JOOLA Ben Johns Perseus 16mm',249.99,20,'2023-06-01',8.00,'assets/1.jpg'),
 (2,1,2,2,'JOOLA Ben Johns Perseus 14mm',249.99,20,'2023-06-01',7.80,'assets/2.jpg'),
-(3,1,1,1,'JOOLA Collin Johns Scorpeus 16mm',249.99,20,'2023-06-01',8.00,'assets/3.jpg'),
+(3,1,1,1,'JOOLA Collin Johns Scorpeus 16mm',249.99,18,'2023-06-01',8.00,'assets/3.jpg'),
 (4,2,4,1,'Vanguard Control Invikta',199.99,15,'2024-01-10',7.90,'assets/4.jpg'),
 (5,2,1,1,'Vanguard Control Epic',199.99,5,'2024-01-10',7.80,'assets/5.jpg'),
 (6,2,8,1,'Power Air Invikta',250.00,4,'2022-08-20',7.90,'assets/6.jpg'),

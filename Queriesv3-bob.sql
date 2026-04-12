@@ -3,91 +3,91 @@
 -- Target Database: mydb
 -- ==========================================
 
-USE mydb;
 
--- 1. Sorts all paddles from most expensive to least expensive
-SELECT paddle_id, model_name, price, stock_quantity, img_url 
-FROM paddles 
-ORDER BY price DESC;
+-- This file is used to easily extract the queries for out assignments.
 
--- 2. Finds low-stock items (under 10 count)
-SELECT paddle_id, model_name, price, stock_quantity, img_url 
+
+-- Req 1: General SELECT with ORDER BY
+-- Intent: Sort inventory from most to least expensive
+SELECT p.paddle_id, b.brand_name, p.model_name, p.price 
+FROM paddles p 
+JOIN brands b ON p.brand_id = b.brand_id 
+ORDER BY p.price DESC;
+
+-- Req 2: SELECT with WHERE clause
+-- Intent: Identify items with low stock (less than 10 units)
+SELECT model_name, stock_quantity 
 FROM paddles 
 WHERE stock_quantity < 10;
 
--- 3. Deletes the dummy brand we added specifically for this test
+-- Req 3: Delete Query
+-- Intent: Remove a specific manufacturer/brand from the system
 DELETE FROM brands 
-WHERE brand_name = 'Dummy Brand';
+WHERE brand_id = 11;
 
--- 4. Adjusts stock quantity of paddles
+-- Req 4: Update Query
+-- Intent: Restock inventory for a specific product
 UPDATE paddles 
-SET stock_quantity = stock_quantity + 0
-WHERE paddle_id = 0;
+SET stock_quantity = stock_quantity + 5 
+WHERE paddle_id = 1;
 
--- 5. Adds a new user customer
-INSERT INTO customers (
-    first_name, 
-    last_name, 
-    email, 
-    membership_level, 
-    member_since
-) 
-VALUES (
-    'Firstname', 
-    'Lastname', 
-    'email@example.com', 
-    'Standard', 
-    CURDATE()
-);
+-- Req 5: Insert Query
+-- Intent: Register a new customer into the database
+INSERT INTO customers (first_name, last_name, email, membership_level, member_since) 
+VALUES ('Firstname', 'Lastname', 'email@example.com', 'Standard', CURDATE());
 
--- 6. Joins paddles and brands to show the paddle name alongside the company that makes it
-SELECT p.model_name, b.brand_name 
+-- Req 6: Inner Join
+-- Intent: Connect paddles to their brand names for professional display
+SELECT p.paddle_id, b.brand_name, p.model_name 
 FROM paddles p 
 INNER JOIN brands b ON p.brand_id = b.brand_id;
 
--- 7. Uses a LEFT JOIN to list paddles with no sales
+-- Req 7: Outer Join
+-- Intent: Identify "Dead Stock" (products that have never been sold)
 SELECT p.model_name 
 FROM paddles p 
 LEFT JOIN sales s ON p.paddle_id = s.paddle_id 
 WHERE s.sale_id IS NULL;
 
--- 8. Calculates the Total Gross Revenue of the storefront
+-- Req 8: Aggregate Function (SUM)
+-- Intent: Calculate the total gross revenue of the shop
 SELECT SUM(total_amount) AS total_revenue 
 FROM sales;
 
--- 9. Returns the customers who have spent the most on the storefront
-SELECT 
-    customer_id, 
-    SUM(total_amount) AS total_spent 
+-- Req 9: GROUP BY and HAVING
+-- Intent: Identify VIP customers who have spent over $200 total
+SELECT customer_id, SUM(total_amount) AS total_spent 
 FROM sales 
 GROUP BY customer_id 
 HAVING SUM(total_amount) > 200;
 
--- 10. Finds all paddles that cost more than the average paddle price
+-- Req 10: Subquery
+-- Intent: Filter for premium paddles priced above the store average
 SELECT model_name, price 
 FROM paddles 
 WHERE price > (SELECT AVG(price) FROM paddles);
 
--- 11. Uses CONCAT() to merge the customer first and last name into a single descriptive string
-SELECT 
-    CONCAT(last_name, ', ', first_name) AS full_name, 
-    email 
-FROM customers
-ORDER BY last_name ASC;
+-- Req 11: String Function (CONCAT & UPPER)
+-- Intent: Format names into a professional directory (LAST, First)
+SELECT CONCAT(UPPER(last_name), ', ', first_name) AS full_name, email 
+FROM customers;
 
--- 12. Uses ROUND() to round the paddle prices to the nearest whole dollar
-SELECT model_name, price, ROUND(price, 0) AS rounded_price 
+-- Req 12: Numeric Function (ROUND)
+-- Intent: Display simplified whole-dollar pricing
+SELECT model_name, ROUND(price, 0) AS rounded_price 
 FROM paddles;
 
--- 13. Uses the MONTH() to get sales from the month of March
+-- Req 13: Date Function (MONTH)
+-- Intent: Filter sales records by a specific month (e.g., March = 3)
 SELECT * FROM sales 
 WHERE MONTH(sale_date) = 3;
 
--- 14. Categorizes paddles into price tiers based on their cost
-SELECT model_name, price,
-    CASE 
-        WHEN price >= 200.00 THEN 'Premium Tier'
-        WHEN price >= 150.00 THEN 'Mid-Range Tier'
-        ELSE 'Budget Tier'
-    END AS price_category
-FROM paddles;
+-- Req 14: CASE Function
+-- Intent: Dynamically categorize transactions and sort by VIP status
+SELECT c.first_name, b.brand_name, p.model_name, s.total_amount, 
+       CASE WHEN s.total_amount > 200 THEN 'VIP Tier' ELSE 'Standard Tier' END AS Tier 
+FROM sales s 
+JOIN customers c ON s.customer_id = c.customer_id 
+JOIN paddles p ON s.paddle_id = p.paddle_id
+JOIN brands b ON p.brand_id = b.brand_id
+ORDER BY Tier DESC;
