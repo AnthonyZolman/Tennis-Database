@@ -1,42 +1,49 @@
 <?php
 // 1. CONNECTION & ERROR REPORTING
-ini_set('display_errors', 1); 
-error_reporting(E_ALL);
-
-// Ensure these match your actual credentials
+ini_set('display_errors', 1); error_reporting(E_ALL);
 $conn = new mysqli("127.0.0.1", "root", "root", "mydb", 3306);
-if ($conn->connect_error) { 
-    die("Connection failed: " . $conn->connect_error); 
-}
+if ($conn->connect_error) { die("Connection failed: " . $conn->connect_error); }
 
-// Turn off safe updates for internal management tasks
+// Turn off safe updates so our Delete/Update queries work smoothly
 $conn->query("SET SQL_SAFE_UPDATES = 0;");
 
 // 2. PAGE LOGIC
 $view = isset($_GET['view']) ? $_GET['view'] : 'inventory';
-$message = ""; 
+$message = isset($_GET['message']) ? htmlspecialchars($_GET['message']) : ""; 
 $sql_log = "";
 
 // 3. INTERACTIVE ACTIONS (Handling POST requests)
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
     switch($_POST['action']) {
-        case 'delete':
+        case 'delete': // Req 3: Delete Query
             $id = (int)$_POST['id'];
             $conn->query("DELETE FROM brands WHERE brand_id = $id");
-            $message = "Brand ID #$id successfully removed from system. (Req 3)";
-            break;
-        case 'update':
+            header("Location: ?view=analytics&message=" . urlencode("Brand ID #$id successfully removed from system. (Req 3)"));
+            exit;
+        case 'update': // Req 4: Update Query
             $id = (int)$_POST['id']; 
             $qty = (int)$_POST['qty'];
-            $conn->query("UPDATE paddles SET stock_quantity = stock_quantity + $qty WHERE paddle_id = $id");
-            $message = "Stock level updated for Item #$id. (Req 4)"; // THERE IS SOMETHING WRONG HERE!!!!
+            
+            if ($qty > 0) {
+                $conn->query("UPDATE paddles SET stock_quantity = stock_quantity + $qty WHERE paddle_id = $id");
+                header("Location: ?view=inventory&message=" . urlencode("Stock level updated for Item #$id. (Req 4)"));
+                exit;
+            } else {
+                header("Location: ?view=inventory&message=" . urlencode("Error: You must enter a quantity greater than zero."));
+                exit;
+            }
             break;
-        case 'add_cust':
-            $f = $conn->real_escape_string($_POST['f']); 
-            $l = $conn->real_escape_string($_POST['l']);
-            $e = $conn->real_escape_string($_POST['e']);
-            $conn->query("INSERT INTO customers (first_name, last_name, email, membership_level, member_since) VALUES ('$f', '$l', '$e', 'Standard', CURDATE())");
-            $message = "New customer registered: $f $l. (Req 5)";
+        case 'add_cust': // Req 5: Insert Query
+            $f = $_POST['f']; 
+            $l = $_POST['l'];
+            $e = $_POST['e'];
+            
+            $stmt = $conn->prepare("INSERT INTO customers (first_name, last_name, email, membership_level, member_since) VALUES (?, ?, ?, 'Standard', CURDATE())");
+            $stmt->bind_param("sss", $f, $l, $e);
+            $stmt->execute();
+            
+            header("Location: ?view=customers&message=" . urlencode("New customer registered: $f $l. (Req 5)"));
+            exit;
             break;
     }
 }
@@ -47,22 +54,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
     <meta charset="UTF-8">
     <title>Pickleball Pro-Shop | Management Console</title>
     <link rel="stylesheet" href="style.css">
-    <style>
-        /* Small addition for image alignment */
-        .img-preview {
-            width: 60px;
-            height: 60px;
-            object-fit: cover;
-            border-radius: 6px;
-            border: 1px solid #e2e8f0;
-            background-color: #f8fafc;
-        }
-        table td { vertical-align: middle; }
-    </style>
 </head>
 <body>
     <nav class="top-nav">
-        <div class="logo">🏓 Pickleball Pro-Shop <span>Manager</span></div>
+        <div class="logo">🏓 Pro-Shop <span>Manager</span></div>
         <div class="nav-links">
             <a href="?view=inventory" class="<?= $view=='inventory'?'active':'' ?>">Inventory</a>
             <a href="?view=customers" class="<?= $view=='customers'?'active':'' ?>">Customers</a>
@@ -81,52 +76,49 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
                     <a href="?view=inventory&sort=price" class="btn-sm">Sort Premium (Req 1)</a>
                     <a href="?view=inventory&filter=low" class="btn-sm warn">Low Stock (Req 2)</a>
                     <a href="?view=inventory&filter=premium" class="btn-sm" style="background:#8b5cf6;">Above Avg Price (Req 10)</a>
+                    <a href="?view=inventory&filter=round" class="btn-sm">Round Prices (Req 12)</a>
                     <a href="?view=inventory" class="btn-sm" style="background:#64748b;">Reset</a>
                 </div>
             </div>
             
             <div class="card">
                 <table>
-                    <thead>
-                        <tr>
-                            <th>Preview</th>
-                            <th>ID</th>
-                            <th>Model</th>
-                            <th>Price (w/ 6% Tax)</th>
-                            <th>Stock</th>
-                            <th>Restock Action</th>
-                        </tr>
-                    </thead>
+                    <thead><tr><th>ID</th><th>Model</th><th>Price (w/ 6% Tax)</th><th>Stock</th><th>Restock Action</th></tr></thead>
                     <tbody>
                         <?php
-                        // UPDATED: Added img_url to the SELECT statement
-                        $sql = "SELECT paddle_id, model_name, price, stock_quantity, img_url FROM paddles";
+                        $priceSelect = "price";
+                        if(isset($_GET['filter']) && $_GET['filter'] == 'round') {
+                            $priceSelect = "ROUND(price * 1.06, 0) AS price";
+                        }
+
+                        $sql = "SELECT paddle_id, model_name, $priceSelect, stock_quantity FROM paddles";
                         
+                        // Applying filters based on buttons clicked
                         if(isset($_GET['filter']) && $_GET['filter'] == 'low') {
-                            $sql .= " WHERE stock_quantity < 10"; 
+                            $sql .= " WHERE stock_quantity < 10"; // Req 2: WHERE clause
                         } elseif(isset($_GET['filter']) && $_GET['filter'] == 'premium') {
-                            $sql .= " WHERE price > (SELECT AVG(price) FROM paddles)"; 
+                            $sql .= " WHERE price > (SELECT AVG(price) FROM paddles)"; // Req 10: Subquery
                         }
                         
                         if(isset($_GET['sort']) && $_GET['sort'] == 'price') {
-                            $sql .= " ORDER BY price DESC"; 
+                            $sql .= " ORDER BY price DESC"; // Req 1: ORDER BY
                         }
                         
-                        $sql_log = $sql; 
+                        $sql_log = $sql; // Save for the Developer console at the bottom
                         $res = $conn->query($sql);
                         
                         if ($res && $res->num_rows > 0) {
                             while($row = $res->fetch_assoc()): ?>
                                 <tr>
-                                    <td>
-                                        <img src="<?= htmlspecialchars($row['img_url']) ?>" 
-                                             alt="Paddle Image" 
-                                             class="img-preview"
-                                             onerror="this.src='https://placehold.co/60x60?text=No+Img'">
-                                    </td>
                                     <td>#<?= $row['paddle_id'] ?></td>
                                     <td><?= $row['model_name'] ?></td>
-                                    <td>$<?= number_format(round($row['price'] * 1.06, 2), 2) ?></td>
+                                    <td>
+                                        <?php if(isset($_GET['filter']) && $_GET['filter'] == 'round'): ?>
+                                            $<?= number_format($row['price'], 0) ?> <span style="font-size:10px; color:gray;">(Req 12)</span>
+                                        <?php else: ?>
+                                            $<?= number_format(round($row['price'] * 1.06, 2), 2) ?> <span style="font-size:10px; color:gray;"></span>
+                                        <?php endif; ?>
+                                    </td>
                                     <td><?= $row['stock_quantity'] ?></td>
                                     <td>
                                         <form method="POST" style="display:inline;">
@@ -138,7 +130,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
                                     </td>
                                 </tr>
                             <?php endwhile; 
-                        } else { echo "<tr><td colspan='6'>No products match this filter.</td></tr>"; } ?>
+                        } else { echo "<tr><td colspan='5'>No products match this filter.</td></tr>"; } ?>
                     </tbody>
                 </table>
             </div>
@@ -154,7 +146,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
                     <button type="submit">Add New Customer (Req 5)</button>
                 </form>
                 <hr style="margin: 20px 0; border: 0; border-top: 1px solid #eee;">
+                
                 <?php 
+                // Req 11: String Function (CONCAT and UPPER)
                 $sql = "SELECT CONCAT(UPPER(last_name), ', ', first_name) AS full_name, email FROM customers"; 
                 $sql_log = $sql;
                 ?>
@@ -169,25 +163,57 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
         <?php elseif($view == 'sales'): ?>
             <div class="section-header">
                 <h2>Sales Ledger</h2>
-                <a href="?view=sales&month=3" class="btn-sm">March Sales Only (Req 13)</a>
-                <a href="?view=sales" class="btn-sm" style="background:#64748b;">Clear Filter</a>
+                <div class="filter-bar" style="display: flex; align-items: center; gap: 10px;">
+                    <form method="GET" style="margin: 0; display: inline-block;">
+                        <input type="hidden" name="view" value="sales">
+                        <select name="month" onchange="this.form.submit()" style="padding: 8px; border-radius: 8px; border: 1px solid #cbd5e1; outline: none;">
+                            <option value="">Filter by Month (Req 13)</option>
+                            <option value="1" <?= (isset($_GET['month']) && $_GET['month'] == '1') ? 'selected' : '' ?>>January</option>
+                            <option value="2" <?= (isset($_GET['month']) && $_GET['month'] == '2') ? 'selected' : '' ?>>February</option>
+                            <option value="3" <?= (isset($_GET['month']) && $_GET['month'] == '3') ? 'selected' : '' ?>>March</option>
+                            <option value="4" <?= (isset($_GET['month']) && $_GET['month'] == '4') ? 'selected' : '' ?>>April</option>
+                            <option value="5" <?= (isset($_GET['month']) && $_GET['month'] == '5') ? 'selected' : '' ?>>May</option>
+                            <option value="6" <?= (isset($_GET['month']) && $_GET['month'] == '6') ? 'selected' : '' ?>>June</option>
+                            <option value="7" <?= (isset($_GET['month']) && $_GET['month'] == '7') ? 'selected' : '' ?>>July</option>
+                            <option value="8" <?= (isset($_GET['month']) && $_GET['month'] == '8') ? 'selected' : '' ?>>August</option>
+                            <option value="9" <?= (isset($_GET['month']) && $_GET['month'] == '9') ? 'selected' : '' ?>>September</option>
+                            <option value="10" <?= (isset($_GET['month']) && $_GET['month'] == '10') ? 'selected' : '' ?>>October</option>
+                            <option value="11" <?= (isset($_GET['month']) && $_GET['month'] == '11') ? 'selected' : '' ?>>November</option>
+                            <option value="12" <?= (isset($_GET['month']) && $_GET['month'] == '12') ? 'selected' : '' ?>>December</option>
+                        </select>
+                    </form>
+                    <a href="?view=sales<?= isset($_GET['month']) && $_GET['month'] != '' ? '&month=' . $_GET['month'] : '' ?>&sort=tier" class="btn-sm" style="background:#8b5cf6;">Sort by Tier (Req 14)</a>
+                    <a href="?view=sales" class="btn-sm" style="background:#64748b;">Clear Filter</a>
+                </div>
             </div>
-            
             <div class="card">
                 <?php 
-                $sql = "SELECT c.first_name, p.model_name, s.total_amount, 
+                // Req 6: Inner Join (Joining sales, customers, and paddles)
+                // Req 14: CASE Function (Assigning VIP or Standard Tier)
+                $sql = "SELECT c.first_name, b.brand_name, p.model_name, s.total_amount, 
                         CASE WHEN s.total_amount > 200 THEN 'VIP Tier' ELSE 'Standard Tier' END as Tier 
                         FROM sales s 
                         JOIN customers c ON s.customer_id = c.customer_id 
-                        JOIN paddles p ON s.paddle_id = p.paddle_id"; 
-                if(isset($_GET['month'])) { $sql .= " WHERE MONTH(s.sale_date) = 3"; }
+                        JOIN paddles p ON s.paddle_id = p.paddle_id
+                        JOIN brands b ON p.brand_id = b.brand_id"; // Added this JOIN to get brand names
+                
+                if(isset($_GET['month']) && $_GET['month'] != '') {
+                    // Req 13: Date Function (MONTH)
+                    $m = (int)$_GET['month']; 
+                    $sql .= " WHERE MONTH(s.sale_date) = $m"; 
+                }
+
+                if(isset($_GET['sort']) && $_GET['sort'] == 'tier') {
+                    $sql .= " ORDER BY Tier DESC";
+                }
                 $sql_log = $sql;
                 ?>
                 <table>
-                    <thead><tr><th>Customer</th><th>Product</th><th>Amount</th><th>Tier</th></tr></thead>
+                    <thead><tr><th>Customer Name</th><th>Brand</th><th>Product Purchased (Req 6)</th><th>Total Amount</th><th>Transaction Tier (Req 14)</th></tr></thead>
                     <?php $res = $conn->query($sql); while($row = $res->fetch_assoc()): ?>
                         <tr>
                             <td><?= $row['first_name'] ?></td>
+                            <td><?= $row['brand_name'] ?></td>
                             <td><?= $row['model_name'] ?></td>
                             <td>$<?= number_format($row['total_amount'], 2) ?></td>
                             <td><span class="badge <?= substr($row['Tier'], 0, 3) ?>"><?= $row['Tier'] ?></span></td>
@@ -198,7 +224,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
 
         <?php elseif($view == 'analytics'): ?>
             <div class="section-header"><h2>Business Analytics</h2></div>
-                <div style="display:flex; gap:20px; flex-wrap:wrap;">
+            
+            <div style="display:flex; gap:20px; flex-wrap:wrap;">
                 <div class="card" style="flex:1; background: #eff6ff; border-left: 5px solid #2563eb;">
                     <h3>Total Gross Revenue (Req 8)</h3>
                     <?php 
@@ -251,10 +278,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
             </div>
 
         <?php endif; ?>
-             
 
         <div class="dev-console">
-            <strong>Active Query Log:</strong><br>
+            <strong>Active Query Log (Screenshot this for your report):</strong><br>
             <code><?= htmlspecialchars($sql_log) ?></code>
         </div>
     </div>
