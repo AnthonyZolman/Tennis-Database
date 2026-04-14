@@ -1,5 +1,6 @@
 <?php
 // 1. CONNECTION & ERROR REPORTING
+session_start();
 ini_set('display_errors', 1); error_reporting(E_ALL);
 $conn = new mysqli("127.0.0.1", "root", "root", "mydb", 3306);
 if ($conn->connect_error) { die("Connection failed: " . $conn->connect_error); }
@@ -10,14 +11,42 @@ $conn->query("SET SQL_SAFE_UPDATES = 0;");
 // 2. PAGE LOGIC
 $view = isset($_GET['view']) ? $_GET['view'] : 'inventory';
 $message = isset($_GET['message']) ? htmlspecialchars($_GET['message']) : ""; 
-$sql_log = "";
+$sql_log = isset($_SESSION['sql_log_flash']) ? $_SESSION['sql_log_flash'] : "";
+unset($_SESSION['sql_log_flash']);
+
+function append_sql_log(&$sql_log, $sql) {
+    $sql_log .= ($sql_log !== "" ? "; \n\n" : "") . $sql;
+}
+
+function paddle_placeholder($label) {
+    $safe_label = htmlspecialchars($label, ENT_QUOTES, 'UTF-8');
+    $svg = <<<SVG
+<svg xmlns="http://www.w3.org/2000/svg" width="72" height="72" viewBox="0 0 72 72">
+  <defs>
+    <linearGradient id="g" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#dbeafe"/>
+      <stop offset="100%" stop-color="#bfdbfe"/>
+    </linearGradient>
+  </defs>
+  <rect width="72" height="72" rx="18" fill="url(#g)"/>
+  <circle cx="36" cy="26" r="12" fill="#2563eb" opacity="0.15"/>
+  <path d="M28 22c0-4.4 3.6-8 8-8h3c4.4 0 8 3.6 8 8v14c0 4.4-3.6 8-8 8h-3c-4.4 0-8-3.6-8-8V22Z" fill="#2563eb"/>
+  <circle cx="38" cy="48" r="3" fill="#93c5fd"/>
+  <title>{$safe_label}</title>
+</svg>
+SVG;
+
+    return 'data:image/svg+xml;utf8,' . rawurlencode($svg);
+}
 
 // 3. INTERACTIVE ACTIONS (Handling POST requests)
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
     switch($_POST['action']) {
         case 'delete': // Req 3: Delete Query
             $id = (int)$_POST['id'];
-            $conn->query("DELETE FROM brands WHERE brand_id = $id");
+            $sql = "DELETE FROM brands WHERE brand_id = $id";
+            $conn->query($sql);
+            $_SESSION['sql_log_flash'] = $sql;
             header("Location: ?view=analytics&message=" . urlencode("Brand ID #$id successfully removed from system. (Req 3)"));
             exit;
         case 'update': // Req 4: Update Query
@@ -25,7 +54,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
             $qty = (int)$_POST['qty'];
             
             if ($qty > 0) {
-                $conn->query("UPDATE paddles SET stock_quantity = stock_quantity + $qty WHERE paddle_id = $id");
+                $sql = "UPDATE paddles SET stock_quantity = stock_quantity + $qty WHERE paddle_id = $id";
+                $conn->query($sql);
+                $_SESSION['sql_log_flash'] = $sql;
                 header("Location: ?view=inventory&message=" . urlencode("Stock level updated for Item #$id. (Req 4)"));
                 exit;
             } else {
@@ -38,9 +69,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
             $l = $_POST['l'];
             $e = $_POST['e'];
             
-            $stmt = $conn->prepare("INSERT INTO customers (first_name, last_name, email, membership_level, member_since) VALUES (?, ?, ?, 'Standard', CURDATE())");
+            $sql = "INSERT INTO customers (first_name, last_name, email, membership_level, member_since) VALUES (?, ?, ?, 'Standard', CURDATE())";
+            $stmt = $conn->prepare($sql);
             $stmt->bind_param("sss", $f, $l, $e);
             $stmt->execute();
+            $_SESSION['sql_log_flash'] = sprintf(
+                "INSERT INTO customers (first_name, last_name, email, membership_level, member_since) VALUES ('%s', '%s', '%s', 'Standard', CURDATE())",
+                $conn->real_escape_string($f),
+                $conn->real_escape_string($l),
+                $conn->real_escape_string($e)
+            );
             
             header("Location: ?view=customers&message=" . urlencode("New customer registered: $f $l. (Req 5)"));
             exit;
@@ -83,7 +121,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
             
             <div class="card">
                 <table>
-                    <thead><tr><th>ID</th><th>Model</th><th>Price (w/ 6% Tax)</th><th>Stock</th><th>Restock Action</th></tr></thead>
+                    <thead><tr><th>ID</th><th>Paddle</th><th>Model</th><th>Price (w/ 6% Tax)</th><th>Stock</th><th>Restock Action</th></tr></thead>
                     <tbody>
                         <?php
                         $priceSelect = "price";
@@ -91,7 +129,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
                             $priceSelect = "ROUND(price * 1.06, 0) AS price";
                         }
 
-                        $sql = "SELECT paddle_id, model_name, $priceSelect, stock_quantity FROM paddles";
+                        $sql = "SELECT paddle_id, model_name, img_url, $priceSelect, stock_quantity FROM paddles";
                         
                         // Applying filters based on buttons clicked
                         if(isset($_GET['filter']) && $_GET['filter'] == 'low') {
@@ -104,13 +142,25 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
                             $sql .= " ORDER BY price DESC"; // Req 1: ORDER BY
                         }
                         
-                        $sql_log = $sql; // Save for the Developer console at the bottom
+                        append_sql_log($sql_log, $sql); // Save for the Developer console at the bottom
                         $res = $conn->query($sql);
                         
                         if ($res && $res->num_rows > 0) {
                             while($row = $res->fetch_assoc()): ?>
                                 <tr>
                                     <td>#<?= $row['paddle_id'] ?></td>
+                                    <td class="inventory-image-cell">
+                                        <?php
+                                        $img_src = paddle_placeholder($row['model_name']);
+                                        if (!empty($row['img_url'])) {
+                                            $asset_path = __DIR__ . DIRECTORY_SEPARATOR . str_replace('/', DIRECTORY_SEPARATOR, $row['img_url']);
+                                            if (file_exists($asset_path)) {
+                                                $img_src = htmlspecialchars($row['img_url'], ENT_QUOTES, 'UTF-8');
+                                            }
+                                        }
+                                        ?>
+                                        <img src="<?= $img_src ?>" alt="<?= htmlspecialchars($row['model_name']) ?>" class="inventory-thumb" width="56" height="56">
+                                    </td>
                                     <td><?= $row['model_name'] ?></td>
                                     <td>
                                         <?php if(isset($_GET['filter']) && $_GET['filter'] == 'round'): ?>
@@ -130,7 +180,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
                                     </td>
                                 </tr>
                             <?php endwhile; 
-                        } else { echo "<tr><td colspan='5'>No products match this filter.</td></tr>"; } ?>
+                        } else { echo "<tr><td colspan='6'>No products match this filter.</td></tr>"; } ?>
                     </tbody>
                 </table>
             </div>
@@ -150,7 +200,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
                 <?php 
                 // Req 11: String Function (CONCAT and UPPER)
                 $sql = "SELECT CONCAT(UPPER(last_name), ', ', first_name) AS full_name, email FROM customers"; 
-                $sql_log = $sql;
+                append_sql_log($sql_log, $sql);
                 ?>
                 <table>
                     <thead><tr><th>Formatted Directory Name (Req 11)</th><th>Email Account</th></tr></thead>
@@ -206,7 +256,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
                 if(isset($_GET['sort']) && $_GET['sort'] == 'tier') {
                     $sql .= " ORDER BY Tier DESC";
                 }
-                $sql_log = $sql;
+                append_sql_log($sql_log, $sql);
                 ?>
                 <table>
                     <thead><tr><th>Customer Name</th><th>Brand</th><th>Product Purchased (Req 6)</th><th>Total Amount</th><th>Transaction Tier (Req 14)</th></tr></thead>
@@ -231,7 +281,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
                     <?php 
                     $sql1 = "SELECT SUM(total_amount) as total FROM sales"; 
                     $r = $conn->query($sql1)->fetch_assoc(); 
-                    $sql_log .= $sql1 . "; \n\n";
+                    append_sql_log($sql_log, $sql1);
                     ?>
                     <h1 style="color: #1e3a8a; font-size: 2.5rem; margin: 10px 0;">$<?= number_format($r['total'], 2) ?></h1>
                 </div>
@@ -240,7 +290,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
                     <h3>VIP Customers (Req 9 - Spent over $200)</h3>
                     <?php 
                     $sql2 = "SELECT customer_id, SUM(total_amount) as total_spent FROM sales GROUP BY customer_id HAVING SUM(total_amount) > 200"; 
-                    $sql_log .= $sql2 . "; \n\n";
+                    append_sql_log($sql_log, $sql2);
                     ?>
                     <table>
                         <thead><tr><th>Customer ID</th><th>Total Lifetime Spend</th></tr></thead>
@@ -255,7 +305,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
                 <h3>Dead Stock Report (Req 7 - Zero Sales)</h3>
                 <?php 
                 $sql3 = "SELECT p.model_name FROM paddles p LEFT JOIN sales s ON p.paddle_id = s.paddle_id WHERE s.sale_id IS NULL"; 
-                $sql_log .= $sql3 . "; \n\n";
+                append_sql_log($sql_log, $sql3);
                 ?>
                 <ul>
                     <?php 
