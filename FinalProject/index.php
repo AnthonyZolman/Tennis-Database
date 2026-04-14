@@ -95,7 +95,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
 </head>
 <body>
     <nav class="top-nav">
-        <div class="logo">🏓 Pro-Shop <span>Manager</span></div>
+        <div class="brand-mark">
+            <img src="Pickleball_Inc..png" alt="Pro-Shop Manager logo" class="site-logo" width="70" height="70">
+        </div>
+        <div class="logo">Pro-Shop <span>Manager</span></div>
         <div class="nav-links">
             <a href="?view=inventory" class="<?= $view=='inventory'?'active':'' ?>">Inventory</a>
             <a href="?view=customers" class="<?= $view=='customers'?'active':'' ?>">Customers</a>
