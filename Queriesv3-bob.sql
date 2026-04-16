@@ -3,20 +3,17 @@
 -- Target Database: mydb
 -- ==========================================
 
-
--- This file is used to easily extract the queries for out assignments.
-
+-- This file is used to easily extract the queries for our assignments.
 
 -- Req 1: General SELECT with ORDER BY
 -- Intent: Sort inventory from most to least expensive
-SELECT p.paddle_id, b.brand_name, p.model_name, p.price 
-FROM paddles p 
-JOIN brands b ON p.brand_id = b.brand_id 
-ORDER BY p.price DESC;
+SELECT paddle_id, model_name, price, stock_quantity, img_url 
+FROM paddles 
+ORDER BY price DESC;
 
 -- Req 2: SELECT with WHERE clause
 -- Intent: Identify items with low stock (less than 10 units)
-SELECT model_name, stock_quantity 
+SELECT paddle_id, model_name, price, stock_quantity, img_url 
 FROM paddles 
 WHERE stock_quantity < 10;
 
@@ -37,10 +34,12 @@ INSERT INTO customers (first_name, last_name, email, membership_level, member_si
 VALUES ('Firstname', 'Lastname', 'email@example.com', 'Standard', CURDATE());
 
 -- Req 6: Inner Join
--- Intent: Connect paddles to their brand names for professional display
-SELECT p.paddle_id, b.brand_name, p.model_name 
-FROM paddles p 
-INNER JOIN brands b ON p.brand_id = b.brand_id;
+-- Intent: Connect sales, customers, paddles, and brands to build the Sales Ledger
+SELECT c.first_name, b.brand_name, p.model_name, s.total_amount 
+FROM sales s 
+JOIN customers c ON s.customer_id = c.customer_id 
+JOIN paddles p ON s.paddle_id = p.paddle_id 
+JOIN brands b ON p.brand_id = b.brand_id;
 
 -- Req 7: Outer Join
 -- Intent: Identify "Dead Stock" (products that have never been sold)
@@ -63,7 +62,7 @@ HAVING SUM(total_amount) > 200;
 
 -- Req 10: Subquery
 -- Intent: Filter for premium paddles priced above the store average
-SELECT model_name, price 
+SELECT paddle_id, model_name, price, stock_quantity 
 FROM paddles 
 WHERE price > (SELECT AVG(price) FROM paddles);
 
@@ -73,8 +72,8 @@ SELECT CONCAT(UPPER(last_name), ', ', first_name) AS full_name, email
 FROM customers;
 
 -- Req 12: Numeric Function (ROUND)
--- Intent: Display simplified whole-dollar pricing
-SELECT model_name, ROUND(price, 0) AS rounded_price 
+-- Intent: Display simplified whole-dollar pricing, including a 6% tax rate
+SELECT paddle_id, model_name, ROUND(price * 1.06, 0) AS price, stock_quantity 
 FROM paddles;
 
 -- Req 13: Date Function (MONTH)
